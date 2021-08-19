@@ -34,6 +34,11 @@ let Author = [
         name: "Deepak",
         books: ["12345ONE"],
     },
+    {
+        id: 3,
+        name: "Aditya",
+        books: [],
+    },
 ];
 
 let Publication = [

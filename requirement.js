@@ -75,3 +75,23 @@ Publication
     - delete a book from publication
     - delete a publication
 */
+
+/*
+Routes Needed in producation
+/author/                                 getting all authors
+/author/:isbn                            get a list of authors based on a book's ISBN
+/author/new                              add new author
+
+/book/                                   get all books
+/book/is/:isbn                           get specific book based on ISBN
+/book/c/:category                        get specific books based on a category
+/book/new                                add new books
+/book/update/:isbn                       update title of a book
+/book/author/update/:isbn                update/add new author
+/book/delete/:isbn                       delete a book
+/book/delete/author/:isbn/:authorId      delete a author from a book
+
+/publications                            get all publications
+/publication/update/book/:isbn           update/add new book to a publication
+/publication/delete/book/:isbn/:pubId    delete a book from publication
+*/

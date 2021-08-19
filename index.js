@@ -66,8 +66,12 @@ OurAPP.get("/author", (req, res) => {
 // Parameters  NONE
 // Method      POST
 OurAPP.post("/book/new", (req, res) => {
-    console.log(req.body);
-    return res.json({ message: "Book Added Successfully" });
+    const { newBook } = req.body;
+
+    //add new data
+    Database.Book.push(newBook);
+
+    return res.json(Database.Book);
 });
 
 // Route     /author/new
@@ -78,17 +82,151 @@ OurAPP.post("/book/new", (req, res) => {
 OurAPP.post("/author/new", (req, res) => {
     const { newAuthor } = req.body;
 
-    console.log(newAuthor);
+    Database.Author.push(newAuthor);
 
-    return res.json({ message: "author was added" });
+    return res.json(Database.Author);
 });
 
-OurAPP.post("/pulication/new", (req, res) => {
-    const publication = req.body;
+//TODO: Student Task
+/*
+Route           /publication/new
+Description     get all publications
+Access          PUBLIC
+Parameters      NONE
+Method          GET
+*/
 
-    console.log(publication);
+// Route           /book/updateTitle
+// Description     update title of a book
+// Access          PUBLIC
+// Parameters      isbn
+// Method          PUT
+OurAPP.put("/book/updateTitle/:isbn", (req, res) => {
+    const { updatedBook } = req.body;
+    const { isbn } = req.params;
 
-    return res.json({ message: "Publication Added" });
+    Database.Book.forEach((book) => {
+        if (book.ISBN === isbn) {
+            book.title = updatedBook.title;
+            return book;
+        }
+        return book;
+    });
+
+    return res.json(Database.Book);
+});
+
+// Route       /book/updateAuthor/:isbn
+// Description update/add new author to a book
+// Access      Public
+// Paramteters isbn
+// Method      put
+
+OurAPP.put("/book/updateAuthor/:isbn", (req, res) => {
+    const { newAuthor } = req.body;
+    const { isbn } = req.params;
+
+    // updating book database object
+    Database.Book.forEach((book) => {
+        // check if ISBN match
+        if (book.ISBN === isbn) {
+            // check if author already exist
+            if (!book.authors.includes(newAuthor)) {
+                // if not, then push new author
+                book.authors.push(newAuthor);
+                return book;
+            }
+
+            // else return
+            return book;
+        }
+        return book;
+    });
+
+    // updating author Database object
+    Database.Author.forEach((author) => {
+        // check if author id match
+        if (author.id === newAuthor) {
+            // check if book already exist
+            if (!author.books.includes(isbn)) {
+                // if not, then push new book
+                author.books.push(isbn);
+                return author;
+            }
+
+            // else return
+            return author;
+        }
+        return author;
+    });
+
+    return res.json({ book: Database.Book, author: Database.Author });
+});
+
+//TODO: Studen Task
+// Route       /author/updateName
+// Description Update name of the author
+// Access      Public
+// Parameters  id
+// Method      Put
+// Params in the req.body are always in string format
+
+/*
+Route               /book/delete/:isbn
+Description         delete a book
+Access              PUBLIC
+Parameters          isbn
+Method              DELETE
+*/
+OurAPP.delete("/book/delete/:isbn", (req, res) => {
+    const { isbn } = req.params;
+
+    const filteredBooks = Database.Book.filter((book) => book.ISBN !== isbn);
+
+    Database.Book = filteredBooks;
+
+    return res.json(Database.Book);
+});
+
+/*
+Route                   /book/deleter/author
+Description             delte an author from a book
+Access                  PUBLIC
+Parameters              id, isdn
+Method                  DELETE
+*/
+OurAPP.delete("/book/delete/author/:isbn/:id", (req, res) => {
+    const { isbn, id } = req.params;
+
+    //updating book database object
+    Database.Book.forEach((book) => {
+        if (book.ISBN === isbn) {
+            if (!book.authors.includes(parseInt(id))) {
+                return;
+            }
+
+            book.authors = book.authors.filter(
+                (databaseId) => databaseId !== parseInt(id)
+            );
+            return book;
+        }
+        return book;
+    });
+
+    Database.Author.forEach((author) => {
+        if (author.id === parseInt(id)) {
+            if (!author.books.includes(isbn)) {
+                return;
+            }
+
+            author.books = author.books.filter((book) => book !== isbn);
+
+            return author;
+        }
+        return author;
+    });
+
+    return res.json({ book: Database.Book, author: Database.Author });
 });
 
 OurAPP.listen(4000, () => console.log("Server is running"));
