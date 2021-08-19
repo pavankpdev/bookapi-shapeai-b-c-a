@@ -189,7 +189,7 @@ OurAPP.delete("/book/delete/:isbn", (req, res) => {
 });
 
 /*
-Route                   /book/deleter/author
+Route                   /book/delete/author
 Description             delte an author from a book
 Access                  PUBLIC
 Parameters              id, isdn
