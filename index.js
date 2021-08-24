@@ -2,6 +2,11 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 
+//Importing Different Schema's
+const Book = require("./schema/book");
+const Author = require("./schema/author");
+const Publication = require("./schema/publication");
+
 // database
 const Database = require("./database");
 
@@ -32,8 +37,9 @@ OurAPP.get("/", (request, response) => {
 // Method   - GET
 // Params   - none
 // Body     - none
-OurAPP.get("/book", (req, res) => {
-    return res.json({ books: Database.Book });
+OurAPP.get("/book", async (req, res) => {
+    const getAllBooks = await Book.find();
+    return res.json(getAllBooks);
 });
 
 // Route    - /book/:bookID
@@ -42,12 +48,16 @@ OurAPP.get("/book", (req, res) => {
 // Method   - GET
 // Params   - bookID
 // Body     - none
-OurAPP.get("/book/:bookID", (req, res) => {
-    const getBook = Database.Book.filter(
-        (book) => book.ISBN === req.params.bookID
-    );
+OurAPP.get("/book/:bookID", async (req, res) => {
+    const getSpecificBook = await Book.findOne({ ISBN: req.params.bookID });
 
-    return res.json({ book: getBook });
+    if (!getSpecificBook) {
+        return res.json({
+            error: `No book found fot the ISBN of ${req.params.bookID}`,
+        });
+    }
+
+    return res.json({ book: getSpecificBook });
 });
 
 // Route    - /book/c/:category
@@ -79,13 +89,15 @@ OurAPP.get("/author", (req, res) => {
 // Access      PUBLIC
 // Parameters  NONE
 // Method      POST
-OurAPP.post("/book/new", (req, res) => {
-    const { newBook } = req.body;
+OurAPP.post("/book/new", async (req, res) => {
+    try {
+        const { newBook } = req.body;
 
-    //add new data
-    Database.Book.push(newBook);
-
-    return res.json(Database.Book);
+        await Book.create(newBook);
+        return res.json({ message: "Book added to the database" });
+    } catch (error) {
+        return res.json({ error: error.message });
+    }
 });
 
 // Route     /author/new
