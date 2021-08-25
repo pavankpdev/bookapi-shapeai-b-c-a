@@ -3,9 +3,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 //Importing Different Schema's
-const Book = require("./schema/book");
-const Author = require("./schema/author");
-const Publication = require("./schema/publication");
+const BookModel = require("./schema/book");
+const AuthorModel = require("./schema/author");
+const PublicationModel = require("./schema/publication");
 
 // database
 const Database = require("./database");
@@ -38,7 +38,7 @@ OurAPP.get("/", (request, response) => {
 // Params   - none
 // Body     - none
 OurAPP.get("/book", async (req, res) => {
-    const getAllBooks = await Book.find();
+    const getAllBooks = await BookModel.find();
     return res.json(getAllBooks);
 });
 
@@ -49,7 +49,9 @@ OurAPP.get("/book", async (req, res) => {
 // Params   - bookID
 // Body     - none
 OurAPP.get("/book/:bookID", async (req, res) => {
-    const getSpecificBook = await Book.findOne({ ISBN: req.params.bookID });
+    const getSpecificBook = await BookModel.findOne({
+        ISBN: req.params.bookID,
+    });
 
     if (!getSpecificBook) {
         return res.json({
@@ -66,12 +68,18 @@ OurAPP.get("/book/:bookID", async (req, res) => {
 // Method   - GET
 // Params   - category
 // Body     - none
-OurAPP.get("/book/c/:category", (req, res) => {
-    const getBook = Database.Book.filter((book) =>
-        book.category.includes(req.params.category)
-    );
+OurAPP.get("/book/c/:category", async (req, res) => {
+    const getSpecificBooks = await BookModel.findOne({
+        category: req.params.category,
+    });
 
-    return res.json({ book: getBook });
+    if (!getSpecificBooks) {
+        return res.json({
+            error: `No book found for the category of ${req.params.category}`,
+        });
+    }
+
+    return res.json({ books: getSpecificBooks });
 });
 
 // Route    - /author
@@ -80,8 +88,9 @@ OurAPP.get("/book/c/:category", (req, res) => {
 // Method   - GET
 // Params   - none
 // Body     - none
-OurAPP.get("/author", (req, res) => {
-    return res.json({ author: Database.Author });
+OurAPP.get("/author", async (req, res) => {
+    const getAllAuthors = await AuthorModel.find();
+    return res.json(getAllAuthors);
 });
 
 // Route       /book/new
@@ -93,7 +102,7 @@ OurAPP.post("/book/new", async (req, res) => {
     try {
         const { newBook } = req.body;
 
-        await Book.create(newBook);
+        await BookModel.create(newBook);
         return res.json({ message: "Book added to the database" });
     } catch (error) {
         return res.json({ error: error.message });
@@ -108,9 +117,9 @@ OurAPP.post("/book/new", async (req, res) => {
 OurAPP.post("/author/new", (req, res) => {
     const { newAuthor } = req.body;
 
-    Database.Author.push(newAuthor);
+    AuthorModel.create(newAuthor);
 
-    return res.json(Database.Author);
+    return res.json({ message: "Author added to the database" });
 });
 
 //TODO: Student Task
@@ -127,19 +136,22 @@ Method          GET
 // Access          PUBLIC
 // Parameters      isbn
 // Method          PUT
-OurAPP.put("/book/updateTitle/:isbn", (req, res) => {
-    const { updatedBook } = req.body;
-    const { isbn } = req.params;
+OurAPP.put("/book/updateTitle/:isbn", async (req, res) => {
+    const { title } = req.body.title;
 
-    Database.Book.forEach((book) => {
-        if (book.ISBN === isbn) {
-            book.title = updatedBook.title;
-            return book;
+    const updateBook = await BookModel.findOneAndUpdate(
+        {
+            ISBN: req.params.isbn,
+        },
+        {
+            title: title,
+        },
+        {
+            new: true,
         }
-        return book;
-    });
+    );
 
-    return res.json(Database.Book);
+    return res.json({ book: updateBook });
 });
 
 // Route       /book/updateAuthor/:isbn
@@ -148,45 +160,43 @@ OurAPP.put("/book/updateTitle/:isbn", (req, res) => {
 // Paramteters isbn
 // Method      put
 
-OurAPP.put("/book/updateAuthor/:isbn", (req, res) => {
+OurAPP.put("/book/updateAuthor/:isbn", async (req, res) => {
     const { newAuthor } = req.body;
     const { isbn } = req.params;
 
-    // updating book database object
-    Database.Book.forEach((book) => {
-        // check if ISBN match
-        if (book.ISBN === isbn) {
-            // check if author already exist
-            if (!book.authors.includes(newAuthor)) {
-                // if not, then push new author
-                book.authors.push(newAuthor);
-                return book;
-            }
-
-            // else return
-            return book;
+    const updatedBook = await BookModel.findOneAndUpdate(
+        {
+            ISBN: isbn,
+        },
+        {
+            $addToSet: {
+                authors: newAuthor,
+            },
+        },
+        {
+            new: true,
         }
-        return book;
-    });
+    );
 
-    // updating author Database object
-    Database.Author.forEach((author) => {
-        // check if author id match
-        if (author.id === newAuthor) {
-            // check if book already exist
-            if (!author.books.includes(isbn)) {
-                // if not, then push new book
-                author.books.push(isbn);
-                return author;
-            }
-
-            // else return
-            return author;
+    const updatedAuthor = await AuthorModel.findOneAndUpdate(
+        {
+            id: newAuthor,
+        },
+        {
+            $addToSet: {
+                books: isbn,
+            },
+        },
+        {
+            new: true,
         }
-        return author;
-    });
+    );
 
-    return res.json({ book: Database.Book, author: Database.Author });
+    return res.json({
+        books: updatedBook,
+        authors: updatedAuthor,
+        message: "New author was added into the database",
+    });
 });
 
 //TODO: Studen Task
